@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+</head>
+
+<body>
+
+    <div class="container body-content">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="usr">EventId:</label>
+                    <input type="text" class="form-control _jsEventId" id="usr">
+                </div>
+                <div class="form-group">
+                    <label for="pwd">StandId:</label>
+                    <input type="text" class="form-control _jsStandId" id="pwd">
+                </div>
+                <div class="form-group">
+                    <label for="pwd">DeviceId:</label>
+                    <input type="text" class="form-control _jsDeviceId" id="pwd">
+                </div>
+                <button type="button" class="btn btn-success _jsConnect">Register Device</button>
+
+            </div>
+            <div class="col-md-4">
+                <h2>Status</h2>
+                <p class="_jsStatus"></p>
+            </div>
+            <div class="col-md-4 _jsTransactions">
+                <h2>Transactions</h2>
+
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="jquery-1.10.2.min.js"></script>
+    <script src="jquery.signalR-2.2.2.js"></script>
+
+    <script type="text/javascript">
+        $(function () {
+            var conn = $.hubConnection('http://tokenmaster.azurewebsites.net/');
+            var hub = conn.createHubProxy('TokenHub');
+            hub.on('registerSuccess', function (data) {
+                $('._jsStatus').html(JSON.parse(data).Msg);
+            });
+
+            hub.on('receiveSuccessfullTransaction',
+                function (data) {
+                    $('._jsTransactions').append('<button type="button" class="btn btn-success">' + data + '</button>');
+                });
+
+            hub.on('RETURNDEBUGDETAILS', function (eventId, standId, deviceId) {
+                $('._jsEventId').val(eventId);
+                $('._jsStandId').val(standId);
+                $('._jsDeviceId').val(deviceId);
+            });
+
+            //eventId, standId, deviceId.
+            conn.start({ withCredentials: false }, function () {
+                $('._jsStatus').html("Websocket connection established, please register device...");
+
+                hub.invoke('GETDEBUGDETAILS');
+            });
+
+            $('._jsConnect').on('click',
+                function (evt) {
+                    //hub.invoke("RegisterEventDevice", "f43c8b28-dba2-45f8-b82e-a20e68ecd9a8", "13BE2FB0-9B4B-E711-9BEF-001C4287BE30", "deviceId");
+                    hub.invoke("RegisterEventDevice", $('._jsEventId').val(), $('._jsStandId').val(), $('._jsDeviceId').val());
+                });
+
+
+        });
+    </script>
+
+</body>
+
+</html>
